@@ -31,7 +31,10 @@ runs:
         FRONTITUDE_API_KEY: ${{ inputs.frontitude-api-key }}
       shell: bash
       run: |
-        cd ${{ inputs.frontitude-dir }}/.. && frontitude pull --status final --include-translations
+        cd ${{ inputs.frontitude-dir }}/.. && frontitude init
+        frontitude config set access-token ${{ secrets.FRONTITUDE_API_KEY }}
+        frontitude source set --name "Recruitment"
+        frontitude pull --status final --include-translations
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v4
       with:
