@@ -1,5 +1,3 @@
-
-
 name: Frontitude GitHub Action
 description: Automatically updates Frontitude text in a repository
 inputs:
@@ -23,6 +21,8 @@ runs:
         node-version: 16
     - run: npm install -g @frontitude/cli
       shell: bash
+    - run: sudo apt-get install expect -y
+      shell: bash
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
@@ -31,9 +31,22 @@ runs:
         FRONTITUDE_API_KEY: ${{ inputs.frontitude-api-key }}
       shell: bash
       run: |
-        cd ${{ inputs.frontitude-dir }}/.. && frontitude init
-        frontitude config set access-token ${{ secrets.FRONTITUDE_API_KEY }}
-        frontitude source set --name "Recruitment"
+        cd ${{ inputs.frontitude-dir }}/..
+        frontitude init
+        frontitude config set access-token ${{ inputs.frontitude-api-key }}
+        
+        # Use expect to automate the selection of "Recruitment"
+        expect -c '
+          spawn frontitude source set
+          expect "? Select the string sources that you would like to connect to this codebase:" {
+            send " "
+            expect "❯◉ Recruitment"
+            send "\r"
+          }
+          interact
+        '
+
+        # Continue with the selected source
         frontitude pull --status final --include-translations
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v4
