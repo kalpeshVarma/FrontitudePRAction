@@ -1,0 +1,44 @@
+
+
+name: Frontitude GitHub Action
+description: Automatically updates Frontitude text in a repository
+inputs:
+  frontitude-api-key:
+    description: "Your Frontitude API key"
+    required: true
+  frontitude-dir:
+    description: "`frontitude` directory location. Only required if the `frontitude` directory is not located at the root of your repository"
+    required: false
+    default: "./frontitude"
+runs:
+  using: "composite"
+  steps:
+    - name: Set current date as env variable
+      id: datetime
+      run: echo "::set-output name=datetime::$(date +'%Y-%m-%dT-%H%M%S')"
+      shell: bash
+    - name: Use Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 16
+    - run: npm install -g @frontitude/cli
+      shell: bash
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Frontitude pull
+      env:
+        FRONTITUDE_API_KEY: ${{ inputs.frontitude-api-key }}
+      shell: bash
+      run: |
+        cd ${{ inputs.frontitude-dir }}/.. && frontitude pull --status final --include-translations
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v4
+      with:
+        commit-message: "frontitude: text update ${{ steps.datetime.outputs.datetime }}"
+        title: Frontitude text update ${{ steps.datetime.outputs.datetime  }}
+        body: Automated change by the Frontitude Text Updater action
+        branch: frontitude-update-${{ steps.datetime.outputs.datetime }}
+branding:
+  icon: type
+  color: yellow
